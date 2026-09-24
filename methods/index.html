@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-5hce7sga> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Methods · Spectrum Atlas</title><meta name="description" content="How the pipeline works, and the lessons it learned in public."><meta name="color-scheme" content="light dark"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌬</text></svg>"><link rel="stylesheet" href="/spectrum-atlas/_astro/about.Csr9jK95.css">
+<style>.small[data-astro-cid-j47zkc5i]{font-size:.9rem}.btn[data-astro-cid-j47zkc5i]{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer;min-height:40px}.btn[data-astro-cid-j47zkc5i]:hover{border-color:var(--accent)}.sheet[data-astro-cid-j47zkc5i]{border-top:1px solid var(--line);padding:var(--space-3) 0}.sheet[data-astro-cid-j47zkc5i] summary[data-astro-cid-j47zkc5i]{cursor:pointer}.mermaid-src[data-astro-cid-j47zkc5i]{font-family:var(--font-mono);font-size:.75rem;line-height:1.4;overflow-x:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:var(--space-3);max-height:320px}.mermaid-out[data-astro-cid-j47zkc5i]{overflow-x:auto}.mermaid-out[data-astro-cid-j47zkc5i] svg{max-width:100%;height:auto}
+</style></head> <body data-base="/spectrum-atlas" data-astro-cid-5hce7sga> <a class="skip" href="#main" data-astro-cid-5hce7sga>Skip to content</a> <header class="top" data-astro-cid-5hce7sga> <div class="container bar" data-astro-cid-5hce7sga> <a class="brand" href="/spectrum-atlas/" aria-label="Spectrum Atlas home" data-astro-cid-5hce7sga><span class="mark" aria-hidden="true" data-astro-cid-5hce7sga>⌬</span> Spectrum Atlas</a> <nav class="desktop" aria-label="Primary" data-astro-cid-5hce7sga> <a href="/spectrum-atlas/atlas/" data-astro-cid-5hce7sga>Atlas</a><a href="/spectrum-atlas/methods/" aria-current="page" data-astro-cid-5hce7sga>Methods</a><a href="/spectrum-atlas/status/" data-astro-cid-5hce7sga>Status</a><a href="/spectrum-atlas/about/" data-astro-cid-5hce7sga>About</a> </nav> <form class="search" action="/spectrum-atlas/atlas/" method="get" role="search" data-astro-cid-5hce7sga> <label class="visually-hidden" for="q" data-astro-cid-5hce7sga>Search molecules</label> <input id="q" name="q" type="search" placeholder="naphthalene · C14H10 · c1ccc2ccccc2c1" autocomplete="off" data-astro-cid-5hce7sga> </form> </div> </header> <main id="main" class="container" data-astro-cid-5hce7sga>  <h1 data-astro-cid-j47zkc5i>Methods</h1> <p data-astro-cid-j47zkc5i>The pipeline computes a cheap harmonic spectrum for a molecule, predicts the correction that a coupled-cluster calculation would make to it, and licenses that prediction per family of vibrations against measured anchors. Everything below links to the pre-registration or the note that carries it.</p> <section class="card" data-astro-cid-j47zkc5i> <h2 data-astro-cid-j47zkc5i>The pictures <span class="muted small" data-astro-cid-j47zkc5i>— the architecture sheets, read from the repository at build time</span></h2> <p class="muted small" data-astro-cid-j47zkc5i>Rectangles are steps (operation + software), rounded shapes are data objects, dashed shapes are not built yet. <button type="button" id="render-mermaid" class="btn" data-astro-cid-j47zkc5i>Render the diagrams</button> <span class="muted" data-astro-cid-j47zkc5i>(loads a diagram library, ≈ 600 kB)</span></p> <details class="sheet" open data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>Overview</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>00_overview.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Overview of plan 05 (level 1): the kinds of process and the data objects that connect them. Target architecture; no decisions, no data. Rectangle = process (here: a whole sheet); rounded ends = data object; arrow = data flow. Dashed = not built yet.</p> <pre class="mermaid-src" data-title="Overview" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef planned stroke-dasharray: 6 4,stroke:#b8860b,fill:#fff3c4,color:#111
+  classDef ext fill:#cfd8e3,stroke:#3d5a80,color:#111
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+  classDef proc fill:#f7f7fb,stroke:#333,stroke-width:1.5px,color:#111
+  classDef research fill:#fdf2e3,stroke:#8a5a00,color:#111
+
+  MOL([&quot;Molecule: geometry, charge, multiplicity&quot;]):::data
+  COND([&quot;Observation conditions: internal energy after UV absorption (emission) or temperature (absorption); resolution of the instrument&quot;]):::data
+  LABDB([&quot;Laboratory spectra&quot;]):::ext
+  PAHDB([&quot;Opponents: PAHdb and other predictors&quot;]):::ext
+
+  LABF[&quot;Label factory (sheet 4)&quot;]:::proc
+  LABELS([&quot;Labels: ΔH blocks with error margin per family&quot;]):::data
+  CORPF[&quot;Corpus step (sheet 3)&quot;]:::proc
+  CORPUS([&quot;Corpus records: mode tokens and proxy correction per molecule&quot;]):::data
+  TRAIN[&quot;Training (sheet 6)&quot;]:::planned
+  TRAINED([&quot;Trained ΔH model: ensemble of members&quot;]):::data
+  TESTSET([&quot;Test set&quot;]):::data
+  EVAL[&quot;Test and licence (sheet 7)&quot;]:::planned
+  LICCAL([&quot;Licence table and calibration&quot;]):::data
+  PIPE[&quot;Spectrum pipeline (sheet 8)&quot;]:::planned
+  SPEC([&quot;Spectrum: bands with position, intensity, profile and error margin; licence status per family&quot;]):::data
+  RES[&quot;Research process (sheets 1 and 2)&quot;]:::research
+
+  MOL --&gt; LABF --&gt; LABELS
+  MOL --&gt; CORPF --&gt; CORPUS
+  LABELS --&gt; TRAIN
+  CORPUS --&gt; TRAIN
+  TRAIN --&gt; TRAINED
+  TRAINED --&gt; EVAL
+  TRAIN --&gt; TESTSET --&gt; EVAL
+  LABDB --&gt; EVAL
+  PAHDB --&gt; EVAL
+  EVAL --&gt; LICCAL
+  MOL --&gt; PIPE
+  LABELS --&gt; PIPE
+  COND --&gt; PIPE
+  TRAINED --&gt; PIPE
+  LICCAL --&gt; PIPE
+  PIPE --&gt; SPEC
+  RES -. decides on .-&gt; LABF
+  RES -. decides on .-&gt; TRAIN
+  RES -. decides on .-&gt; EVAL
+  RES -. decides on .-&gt; PIPE</pre> <div class="mermaid-out" aria-label="Diagram: Overview" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/00_overview.mmd" data-astro-cid-j47zkc5i>source</a></p> </details><details class="sheet" data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>Data creation: the corpus</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>30_data_creation_corpus.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Data creation — the corpus: two DFT Hessians per molecule and the proxy correction (level 3). Target architecture. Rectangle = process step (operation + software); rounded ends = data object (the thing). Every step yields one data object. Everything exists.</p> <pre class="mermaid-src" data-title="Data creation: the corpus" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+
+  MOL([&quot;Molecule: SMILES or geometry, charge, multiplicity&quot;]):::data
+  OPT[&quot;Geometry optimisation at low level (psi4)&quot;]
+  GEO([&quot;Optimised geometry&quot;]):::data
+  DFTL[&quot;DFT at low level (psi4)&quot;]
+  SK([&quot;Hessian H0 and dipole derivatives&quot;]):::data
+  DFTH[&quot;DFT at high level (psi4)&quot;]
+  H1([&quot;Hessian H1&quot;]):::data
+  MODE[&quot;Mode analysis (own software)&quot;]
+  MODES([&quot;Normal modes: L, frequencies, families, symmetry blocks&quot;]):::data
+  PROXY[&quot;Proxy correction (own software)&quot;]
+  DHP([&quot;Proxy correction: ΔH = H1 − H0 per family block, in the mode basis&quot;]):::data
+  TOKS[&quot;Tokenisation (own software)&quot;]
+  TOK([&quot;Mode tokens&quot;]):::data
+  REC[&quot;Record assembly (own software)&quot;]
+  CORP([&quot;Corpus record: mode tokens, proxy correction, Hessian H0 and dipole derivatives&quot;]):::data
+
+  MOL --&gt; OPT --&gt; GEO
+  GEO --&gt; DFTL --&gt; SK --&gt; MODE --&gt; MODES
+  GEO --&gt; DFTH --&gt; H1
+  SK --&gt; PROXY
+  H1 --&gt; PROXY
+  MODES --&gt; PROXY --&gt; DHP --&gt; REC
+  MODES --&gt; TOKS --&gt; TOK --&gt; REC
+  SK --&gt; REC
+  REC --&gt; CORP</pre> <div class="mermaid-out" aria-label="Diagram: Data creation: the corpus" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/30_data_creation_corpus.mmd" data-astro-cid-j47zkc5i>source</a></p> </details><details class="sheet" data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>Data creation: the labels</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>40_data_creation_labels.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Data creation — the label factory: how one label comes about (level 3). Target architecture: no decisions, no data. Rectangle = process step (operation + software); rounded ends = data object (the thing). Every step yields one data object. Dashed = not built yet.</p> <pre class="mermaid-src" data-title="Data creation: the labels" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef planned stroke-dasharray: 6 4,stroke:#b8860b,fill:#fff3c4,color:#111
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+
+  MOL([&quot;Molecule: geometry, charge, multiplicity&quot;]):::data
+  DFT[&quot;DFT (psi4)&quot;]
+  SK([&quot;Hessian H0 and dipole derivatives&quot;]):::data
+  MODE[&quot;Mode analysis (own software)&quot;]
+  MODES([&quot;Normal modes: L, frequencies, families, symmetry blocks&quot;]):::data
+  DESIGN[&quot;Deck design (own software)&quot;]
+  DECK([&quot;Deck: displacement patterns per family block, with energy and gradient directions&quot;]):::data
+  LOC[&quot;Localisation and fragmentation at the equilibrium geometry (pyscf-forge)&quot;]
+  REF([&quot;Frozen reference spaces: local orbitals and fragment spaces&quot;]):::data
+  TRANS[&quot;Transport (own software)&quot;]
+  SPACES([&quot;Reference spaces at every deck geometry&quot;]):::data
+  EN[&quot;LNO-CCSD(T) energies (pyscf-forge)&quot;]
+  ENS([&quot;Energies per pattern&quot;]):::data
+  GR[&quot;LNO-CCSD(T) gradients (own software, JAX)&quot;]:::planned
+  GRS([&quot;Gradients per pattern&quot;]):::data
+  OPEN[&quot;LNO-CCSD(T) for open shell (own (T) port in C)&quot;]:::planned
+  OPENS([&quot;Energies per pattern for cations&quot;]):::data
+  SOLVE[&quot;Block solve (own software)&quot;]
+  DH([&quot;ΔH blocks per family: diagonal and couplings&quot;]):::data
+  CHECK[&quot;Consistency check (own software)&quot;]
+  NOISE([&quot;Noise term per quantity: difference between two routes or between symmetry partners&quot;]):::data
+  BUDGET[&quot;Error budget (own software)&quot;]
+  MARG([&quot;Error margin per family: noise, quartic term, recovery error&quot;]):::data
+  CUB([&quot;Cubic constants of the low level (from the VPT2 step of sheet 8)&quot;]):::data
+  GEO[&quot;Geometry term (own software)&quot;]
+  GTERM([&quot;Geometry term per mode: first-order shift towards the high-level minimum, from the ± energies along the totally symmetric modes and the low-level cubic constants, with noise term&quot;]):::data
+  SEAL[&quot;Sealing (own software)&quot;]
+  LABEL([&quot;Label: ΔH blocks with error margin per family and geometry term per mode, sealed&quot;]):::data
+
+  MOL --&gt; DFT --&gt; SK --&gt; MODE --&gt; MODES --&gt; DESIGN --&gt; DECK
+  SK --&gt; LOC --&gt; REF
+  REF --&gt; TRANS
+  DECK --&gt; TRANS --&gt; SPACES
+  SPACES --&gt; EN --&gt; ENS
+  SPACES --&gt; GR --&gt; GRS
+  SPACES --&gt; OPEN --&gt; OPENS
+  ENS --&gt; SOLVE
+  GRS --&gt; SOLVE
+  OPENS --&gt; SOLVE
+  SOLVE --&gt; DH --&gt; SEAL
+  ENS --&gt; GEO
+  CUB --&gt; GEO --&gt; GTERM --&gt; SEAL
+  ENS --&gt; CHECK
+  GRS --&gt; CHECK
+  CHECK --&gt; NOISE --&gt; BUDGET
+  ENS --&gt; BUDGET
+  GRS --&gt; BUDGET
+  BUDGET --&gt; MARG --&gt; SEAL
+  SEAL --&gt; LABEL</pre> <div class="mermaid-out" aria-label="Diagram: Data creation: the labels" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/40_data_creation_labels.mmd" data-astro-cid-j47zkc5i>source</a></p> </details><details class="sheet" data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>The correction model</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>50_deltaH_model_components.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Components of the ΔH model (level 4): what happens inside the step &quot;Forward pass (ΔH model, PyTorch)&quot; of sheet 8 (the spectrum pipeline). Backbone = embedding and self-attention; heads = block head and pair head; the ensemble consists of members with different seeds. Target architecture; largely not built yet. Rectangle = process step (operation + software); rounded ends = data object (the thing). Every step yields one data object. Dashed = not built yet.</p> <pre class="mermaid-src" data-title="The correction model" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef planned stroke-dasharray: 6 4,stroke:#b8860b,fill:#fff3c4,color:#111
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+  classDef part fill:#f7f7fb,stroke:#333,stroke-width:1.5px,color:#111
+
+  TOK([&quot;Mode tokens of one molecule, with charge and multiplicity&quot;]):::data
+  EMB[&quot;Embedding (PyTorch)&quot;]
+  EMBV([&quot;Token vectors&quot;]):::data
+  ATT[&quot;Self-attention over the modes (PyTorch)&quot;]
+  CTX([&quot;Context vectors per mode&quot;]):::data
+  BLK[&quot;Block head (PyTorch)&quot;]:::planned
+  BLKS([&quot;ΔH blocks per family of one ensemble member&quot;]):::data
+  PAIR[&quot;Pair head (PyTorch)&quot;]
+  PAIRS([&quot;Support labels per mode pair&quot;]):::data
+  ENSA[&quot;Ensemble averaging over the members (own software)&quot;]:::planned
+  OUT([&quot;ΔH blocks per family, with ensemble uncertainty&quot;]):::data
+
+  subgraph BB[&quot;Backbone of the ΔH model&quot;]
+    EMB
+    EMBV
+    ATT
+    CTX
+  end
+  subgraph HD[&quot;Heads of the ΔH model&quot;]
+    BLK
+    PAIR
+  end
+  class BB,HD part
+
+  %% Decision 49 (23 September 2026): the couplings are predicted as pairwise local terms in primitive internal coordinates and projected onto the
+  %% mode basis; the mode-basis block head stays as module 05&#39;s pre-registered baseline for the diagonal. Pre-registered E7: ring coupling ratio
+  %% 0.43 / 0.47 on the two hold-outs, corrected frequencies 4.7 / 5.1 cm-1 (mode basis: 1.00, i.e. no coupling learned).
+  PRIM([&quot;Primitive internal coordinates of the molecule and their pairs: diagonal, atom-sharing pairs, ring bond–bond pairs (geomeTRIC)&quot;]):::data
+  LOC[&quot;Pairwise local head on pair features (MLP or trees, PyTorch / scikit-learn)&quot;]:::planned
+  DFL([&quot;ΔF: force-constant corrections per primitive pair&quot;]):::data
+  PROJ[&quot;Projection Bᵀ ΔF B onto the cheap modes (own software)&quot;]
+  KLOC([&quot;ΔH blocks per family from the local terms, couplings included&quot;]):::data
+
+  TOK --&gt; EMB --&gt; EMBV --&gt; ATT --&gt; CTX
+  CTX --&gt; BLK --&gt; BLKS --&gt; ENSA --&gt; OUT
+  CTX --&gt; PAIR --&gt; PAIRS --&gt; ENSA
+  PRIM --&gt; LOC --&gt; DFL --&gt; PROJ --&gt; KLOC --&gt; ENSA</pre> <div class="mermaid-out" aria-label="Diagram: The correction model" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/50_deltaH_model_components.mmd" data-astro-cid-j47zkc5i>source</a></p> </details><details class="sheet" data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>Test and licence</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>70_test_and_licence.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Test and licence (level 3b): from the trained ΔH model and the test set come the licence table and the calibration that the spectrum pipeline uses alongside the trained model. The model&#39;s weights do not change here. Target architecture; not built yet. Rectangle = process step (operation + software); rounded ends = data object (the thing). Every step yields one data object. Dashed = not built yet.</p> <pre class="mermaid-src" data-title="Test and licence" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef planned stroke-dasharray: 6 4,stroke:#b8860b,fill:#fff3c4,color:#111
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+  classDef ext fill:#cfd8e3,stroke:#3d5a80,color:#111
+
+  ENS([&quot;Trained ΔH model: ensemble of members&quot;]):::data
+  TESTSET([&quot;Test set&quot;]):::data
+  LABDB([&quot;Laboratory spectra with the margin per reference column&quot;]):::ext
+  PAHDB([&quot;Opponents: PAHdb and other predictors&quot;]):::ext
+  TEST[&quot;Test on the test molecules (own software)&quot;]:::planned
+  TESTR([&quot;Test errors per family and charge state, alongside the opponents&quot;]):::data
+  LIC[&quot;Licence determination (own software)&quot;]:::planned
+  LICT([&quot;Licence table per family and charge state&quot;]):::data
+  CAL[&quot;Uncertainty calibration (own software)&quot;]:::planned
+  CALR([&quot;Calibration of the ensemble spread&quot;]):::data
+
+  ENS --&gt; TEST
+  TESTSET --&gt; TEST
+  LABDB --&gt; TEST
+  PAHDB --&gt; TEST
+  TEST --&gt; TESTR
+  TESTR --&gt; LIC --&gt; LICT
+  TESTR --&gt; CAL --&gt; CALR</pre> <div class="mermaid-out" aria-label="Diagram: Test and licence" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/70_test_and_licence.mmd" data-astro-cid-j47zkc5i>source</a></p> </details><details class="sheet" data-astro-cid-j47zkc5i> <summary data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>The spectrum pipeline</strong> <span class="mono muted small" data-astro-cid-j47zkc5i>80_spectrum_pipeline.mmd</span></summary> <p class="small" data-astro-cid-j47zkc5i>Spectrum pipeline (level 3): molecule in, spectrum with error margin out. ΔH comes from two sources: measured (the label of sheet 4, for molecules with a label) or predicted (the ΔH model, for all others); the tail is the same. Target architecture. Rectangle = process step (operation + software); rounded ends = data object (the thing). Every step yields one data object. Dashed = not built yet.</p> <pre class="mermaid-src" data-title="The spectrum pipeline" data-astro-cid-j47zkc5i>flowchart LR
+  linkStyle default stroke:#8a9bb0,stroke-width:2.2px
+  classDef planned stroke-dasharray: 6 4,stroke:#b8860b,fill:#fff3c4,color:#111
+  classDef data fill:#e9ecef,stroke:#555,color:#111
+
+  MOL([&quot;Molecule: geometry, charge, multiplicity&quot;]):::data
+  COND([&quot;Observation conditions: internal energy after UV absorption (emission) or temperature (absorption); resolution of the instrument&quot;]):::data
+
+  DFT[&quot;DFT (psi4)&quot;]
+  SK([&quot;Hessian H0 and dipole derivatives&quot;]):::data
+  VPT[&quot;VPT2 (pyVPT2 on pyscf Hessians)&quot;]
+  ANHC([&quot;Anharmonic constants, with route difference per constant&quot;]):::data
+  MODE[&quot;Mode analysis (own software)&quot;]
+  MODES([&quot;Normal modes: L, frequencies, families, symmetry blocks&quot;]):::data
+  TOKS[&quot;Tokenisation (own software)&quot;]
+  TOK([&quot;Mode tokens&quot;]):::data
+  FWD[&quot;Forward pass (ΔH model, PyTorch)&quot;]:::planned
+  DH([&quot;ΔH blocks per family and relaxation along the totally symmetric modes, with ensemble uncertainty&quot;]):::data
+  LAB([&quot;Label from the label factory: ΔH blocks with error margin per family and geometry term per mode&quot;]):::data
+  LICF[&quot;Licence filter (own software)&quot;]:::planned
+  DHL([&quot;Applied and refused ΔH blocks, with reason&quot;]):::data
+  APPLY[&quot;Assembly of H (own software)&quot;]
+  H([&quot;Force constants H = H0 + ΔH on licensed blocks, H0 elsewhere; licence status per family&quot;]):::data
+  EIG[&quot;Diagonalisation (own software)&quot;]
+  POS([&quot;Band positions with margin and licence status per family&quot;]):::data
+  GEOP[&quot;Geometry term (own software)&quot;]
+  POSG([&quot;Band positions with geometry term, margin and licence status per family&quot;]):::data
+  INT[&quot;Intensity calculation (own software)&quot;]
+  INTS([&quot;Band intensities, redistributed over resonance polyads&quot;]):::data
+  ANH[&quot;Anharmonic correction (own software)&quot;]
+  ANHS([&quot;Anharmonic shifts per band&quot;]):::data
+  SHAPE[&quot;Profile formation (own software)&quot;]
+
+  SPEC([&quot;Spectrum: bands with position, intensity, profile and error margin; licence status per family&quot;]):::data
+
+  MOL --&gt; DFT --&gt; SK
+  SK --&gt; MODE --&gt; MODES
+  SK --&gt; VPT --&gt; ANHC
+  MODES --&gt; TOKS --&gt; TOK --&gt; FWD --&gt; DH --&gt; LICF --&gt; DHL --&gt; APPLY --&gt; H --&gt; EIG --&gt; POS --&gt; GEOP --&gt; POSG --&gt; SHAPE
+  DHL --&gt; GEOP
+  ANHC --&gt; GEOP
+  LAB --&gt; LICF
+  SK --&gt; APPLY
+  SK --&gt; INT
+  MODES --&gt; INT --&gt; INTS --&gt; SHAPE
+  ANHC --&gt; ANH
+  ANHC --&gt; INT
+  MODES --&gt; ANH --&gt; ANHS --&gt; SHAPE
+  COND --&gt; SHAPE
+  SHAPE --&gt; SPEC</pre> <div class="mermaid-out" aria-label="Diagram: The spectrum pipeline" data-astro-cid-j47zkc5i></div> <p class="muted small" data-astro-cid-j47zkc5i><a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/architecture/80_spectrum_pipeline.mmd" data-astro-cid-j47zkc5i>source</a></p> </details> </section> <section class="card" style="margin-top: 16px" data-astro-cid-j47zkc5i> <h2 data-astro-cid-j47zkc5i>Three lessons</h2> <ol data-astro-cid-j47zkc5i> <li data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>Every derived quantity gets a second route.</strong> Finite-difference quartics turned out to be noise; a benzene Hessian in the corpus was wrong by 133 cm⁻¹ because of a quadrature grid, found by an analytic second calculation. <a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/QUALITY_POLICY.md" data-astro-cid-j47zkc5i>Quality policy</a>.</li> <li data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>The couplings are learned only in local coordinates.</strong> In the basis of normal modes the correction's couplings are unlearnable at any data size; written as pairwise terms in bonds and angles the same data teach them. <a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/notes/PreRegistration_2026-09-23_E7_Couplings_in_Local_Coordinates.md" data-astro-cid-j47zkc5i>E7</a>.</li> <li data-astro-cid-j47zkc5i><strong data-astro-cid-j47zkc5i>The coupled-cluster correction is local too, one bond further.</strong> Benzene's CCSD(T) correction sits 98 % inside the pairwise pattern once pairs two bonds apart are included. <a href="https://github.com/thebreadishard/udacity-capstone-plan/blob/master/plans/05_delta-probed-ir-pipeline/GoalGathering/notes/PreRegistration_2026-09-23_E8_CC_Correction_Locality.md" data-astro-cid-j47zkc5i>E8</a>.</li> </ol> </section>  </main> <footer class="container foot muted" data-astro-cid-5hce7sga> <p data-astro-cid-5hce7sga>Data as of 2026-09-24 · releases layerA2_2026-09-23, layerA2_2026-09-23b, layerA_2026-09-22 · every number links to the file it came from · no trackers, no cookies.</p> </footer> <nav class="mobile" aria-label="Primary (mobile)" data-astro-cid-5hce7sga> <a href="/spectrum-atlas/atlas/" data-astro-cid-5hce7sga>Atlas</a><a href="/spectrum-atlas/methods/" aria-current="page" data-astro-cid-5hce7sga>Methods</a><a href="/spectrum-atlas/status/" data-astro-cid-5hce7sga>Status</a><a href="/spectrum-atlas/about/" data-astro-cid-5hce7sga>About</a> </nav> </body></html> <script type="module" src="/spectrum-atlas/_astro/methods.astro_astro_type_script_index_0_lang.D5hXA9ub.js"></script> 
